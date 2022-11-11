@@ -1,0 +1,114 @@
+---
+title: "DifferentialAnalysis"
+output: html_document
+date: '2022-11-07'
+---
+
+```{r setup, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+knitr::opts_chunk$set(cache = TRUE, cache.lazy = F)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+
+### Make the upset plot of top hits at FDR=0.2
+
+```{r, out.width='80%', fig.align='center', eval=T, warning=FALSE}
+plotUpsetPlotLimma(limresRegion, 0.2)
+
+```
+
+### Focus on common regulated regions by setting the intersection cutoff to 2
+
+
+```{r, out.width='80%', fig.align='center', eval=T, warning=FALSE}
+plotUpsetPlotLimma(limresRegion, 0.2,intCutoff = 2)
+
+```
+
+### Perform GREAT enrichment for up/down regions at Q-value < 0.2.
+
+
+```{r diffEnrichAll,  results='hide', message=FALSE, eval=F}
+allDiffEnrichmentsGO=greatEnrichmentLimmaAll(limresRegion, 0.2, extended_tss = et, gmt=gmtGO)
+
+```
+```{r, eval=F}
+allDiffEnrichmentsKEGG$contrast=sub("-.*","", allDiffEnrichmentsKEGG$contrast)
+allDiffEnrichmentsGO$contrast=sub("-.*","", allDiffEnrichmentsGO$contrast)
+```
+
+
+
+```{r, eval=T, echo=F}
+kable(topNenrichment(allDiffEnrichmentsGO, p.adjust = 0.1, n=10)[, c(1,2,3,6,7)], row.names = F, digits=5, col.names = c("contrast    ", "direction","term", "p_value", "p_adjust") )
+```
+#### Comparing Sex specific vs pooled differential methylation tests
+
+
+```{r, out.width='100%', fig.align='center',eval=T, fig.height=8}
+p1=plotUpsetPlotLimma(limresRegion, 0.2,set_size=F)
+p2=plotUpsetPlotLimma(limresRegionSexCombined, 0.2, set_size=F)
+ggarrange(p1,p2, nrow = 2)
+```
+
+### Look at the sex differences in the hippocampus signal in more detail
+
+Pick the regions significant in the joint contrast
+```{r}
+iHipCont=c(1)
+iiHipRegions=which(limresRegionSexCombined$q.value[, iHipCont]<0.05)
+length(iiHipRegions)
+```
+
+Plot the by sex results for these regions
+```{r,  out.width='100%', fig.align='center',eval=T}
+iHipCont=c(1,9)
+toPlot=limresRegion$t[iiHipRegions, iHipCont]
+colnames(toPlot)=c("F", "M")
+pres=pheatmap(toPlot, silent = T)
+toPlot[limresRegion$q.value[iiHipRegions, iHipCont]>0.2]=NA
+pheatmap(toPlot[pres$tree_row$order,], cluster_rows = F, cluster_cols = F, labels_row="")
+```
+
+### Look at the overlap between pooled differential genes and genes associated with differential LVs
+
+
+```{r,echo=T, eval=T}
+topLVgenes=getTopGenesEachZ(methres$Z, sigLVs, top = 1000)
+totGenes=length(unique(methRegion.table$symbol))
+
+intRes=intersectGeneListsHG(topLVgenes, deGenes, totGenes)
+toPlot=(intRes$fold)
+toPlot[intRes$fdr>0.05|intRes$fold<1.5]=0
+pheatmap(toPlot, main="Overlap between top DEGs and top genes for differential LVs")
+```
+
+### Look at the overlap between pooled differential genes and pooled differential DMRs
+
+
+```{r,echo=T, eval=T}
+topDMRgenes=getTopEachContrast(limresRegionSexCombined, top = 1000)
+
+totGenes=length(unique(methRegion.table$symbol))
+
+intRes=intersectGeneListsHG(topDMRgenes, deGenes, totGenes)
+toPlot=(intRes$fold)
+toPlot[intRes$fdr>0.05|intRes$fold<1.5]=0
+pheatmap(toPlot, main="Overlap between top DEGs and top DMR-genes with pooled-sex analysis")
+```
+
+
+### Look at the overlap between pooled differential genes and split differential DMRs
+
+
+```{r,echo=T, eval=T, fig.height=10}
+topDMRgenes=getTopEachContrast(limresRegion, top=1000)
+
+totGenes=length(unique(methRegion.table$symbol))
+
+intRes=intersectGeneListsHG(topDMRgenes, deGenes, totGenes)
+toPlot=(intRes$fold)
+toPlot[intRes$fdr>0.05|intRes$fold<1.5]=0
+pheatmap(toPlot, main="Overlap between top DEGs and top DMR-genes with split-sex analysis")
+```
