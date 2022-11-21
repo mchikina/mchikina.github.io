@@ -1,0 +1,74 @@
+---
+title: "RNAdiffExpanded"
+output: html_document
+date: '2022-11-21'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+```
+
+
+
+
+
+
+
+```{r, eval=T, out.width='80%', fig.align='center'}
+plotUpsetPlotLimma(limresRNA, 0.05, top = 10)
+
+```{r, eval=T, out.width='80%', fig.align='center'}
+plotUpsetPlotLimma(limresRNASexCombined, 0.05, top = 10)
+```
+
+We have so many differentially expressed genes, where is this coming from.
+
+Select a tissue from control and week 8 only and plot the PCA
+```{r, eval=T, out.width='80%', fig.align='center'}
+ii=which(phenoRNA$tissue=="brown-adipose"&!is.na(phenoRNA$group2))
+plotPCAggplotAll(rnaQNforvoom[,ii], grp=phenoRNA$group4[ii], scale=T, do.contour = F, sz=5,do.circle = T)
+```
+Turn off scaling
+```{r, eval=T, out.width='80%', fig.align='center'}
+plotPCAggplotAll(rnaQNforvoom[,ii], grp=phenoRNA$group4[ii], scale=F, do.contour = F, sz=5,do.circle = T)
+```
+Use the raw data, no scaling.
+```{r, eval=T, out.width='80%', fig.align='center'}
+rnaForPCA=rna
+rnaForPCA[is.na(rnaForPCA)]=minval
+plotPCAggplotAll(rnaForPCA[,ii], grp=phenoRNA$group4[ii], scale=F, do.contour = F, sz=5,do.circle = T)
+```
+
+Select a tissue from control and week 8 only and plot the PCA
+```{r, eval=T, out.width='80%', fig.align='center'}
+iiH=which(phenoRNA$tissue=="hippocampus"&!is.na(phenoRNA$group2))
+plotPCAggplotAll(rnaQNforvoom[,iiH], grp=phenoRNA$group4[iiH], scale=T, do.contour = F, sz=5,do.circle = T)
+```
+Turn off scaling
+```{r, eval=T, out.width='80%', fig.align='center'}
+plotPCAggplotAll(rnaQNforvoom[,ii], grp=phenoRNA$group4[ii], scale=F, do.contour = F, sz=5,do.circle = T)
+```
+Use the raw data, no scaling.
+```{r, eval=T, out.width='80%', fig.align='center'}
+rnaForPCA=rna
+rnaForPCA[is.na(rnaForPCA)]=minval
+plotPCAggplotAll(rnaForPCA[,ii], grp=phenoRNA$group4[ii], scale=F, do.contour = F, sz=5,do.circle = T)
+```
+
+
+do enrichments
+
+```{r, eval=F}
+
+ enrichRNA=gmtEnrichmentLimmaAll(limresRNA,0.05, gmt = gmtGOrna, min.sig = 10)
+enrichRNA$contrast=sub("\\.w8.*Control", "", enrichRNA$contrast)
+```
+```{r, eval=T}
+topErna=topNenrichment(enrichRNA)
+kable(topErna[, c(1:4,7)])
+```
+
+```{r, eval=T}
+topErna=topNenrichment(enrichRNA, sort = "pval")
+kable(topErna[, c(1:4,7)])
+```
